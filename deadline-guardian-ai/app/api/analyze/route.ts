@@ -10,6 +10,7 @@ export async function POST(req: Request) {
     const { task } = body;
 
     try {
+      // 🔥 Try Gemini AI first
       const response = await ai.models.generateContent({
         model: "gemini-2.0-flash",
         contents: `
@@ -18,8 +19,8 @@ Analyze this task:
 ${task}
 
 Give:
-1. Priority
-2. Difficulty
+1. Priority (High/Medium/Low)
+2. Difficulty (Easy/Medium/Hard)
 3. Estimated Hours
 4. Urgency
 `,
@@ -28,29 +29,69 @@ Give:
       return Response.json({
         result: response.text,
       });
-
     } catch (err) {
-      console.log("Gemini unavailable. Using fallback.");
+      // ⚡ Smart fallback (NO API dependency)
+      console.log("Gemini unavailable. Using smart fallback.");
+
+      const text = task.toLowerCase();
+
+      let priority = "Medium";
+      let difficulty = "Medium";
+      let hours = "2-3 Hours";
+      let urgency = "Normal";
+
+      // 🔍 Keyword-based intelligence
+      if (
+        text.includes("urgent") ||
+        text.includes("tomorrow") ||
+        text.includes("asap") ||
+        text.includes("due")
+      ) {
+        priority = "High";
+        urgency = "High";
+        hours = "4-6 Hours";
+      }
+
+      if (
+        text.includes("assignment") ||
+        text.includes("project") ||
+        text.includes("exam")
+      ) {
+        difficulty = "Hard";
+        hours = "6-10 Hours";
+      }
+
+      if (
+        text.includes("buy") ||
+        text.includes("shop") ||
+        text.includes("groceries") ||
+        text.includes("small") ||
+        text.includes("quick")
+      ) {
+        priority = "Low";
+        difficulty = "Easy";
+        hours = "30-60 Minutes";
+        urgency = "Low";
+      }
 
       return Response.json({
         result: `
-Priority: High
+Priority: ${priority}
 
-Difficulty: Medium
+Difficulty: ${difficulty}
 
-Estimated Hours: 4-6 Hours
+Estimated Hours: ${hours}
 
-Urgency: Complete this task as soon as possible.
+Urgency: ${urgency}
 
 AI Suggestion:
-Break the work into small milestones, focus on the most important part first, avoid distractions, and review your progress after every hour.
-`,
+Break the task into smaller steps, prioritize the most important parts first, avoid distractions, and track progress consistently.
+        `,
       });
     }
-
   } catch (error) {
     return Response.json(
-      { error: "Invalid request." },
+      { error: "Invalid request" },
       { status: 400 }
     );
   }
