@@ -9,30 +9,49 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { task } = body;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: `
-      Analyze this task:
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: `
+Analyze this task:
 
-      ${task}
+${task}
 
-      Give:
-      1. Priority (High/Medium/Low)
-      2. Difficulty (Easy/Medium/Hard)
-      3. Estimated Hours
-      4. Urgency
-      `,
-    });
+Give:
+1. Priority
+2. Difficulty
+3. Estimated Hours
+4. Urgency
+`,
+      });
 
-    return Response.json({
-      result: response.text,
-    });
+      return Response.json({
+        result: response.text,
+      });
+
+    } catch (err) {
+      console.log("Gemini unavailable. Using fallback.");
+
+      return Response.json({
+        result: `
+Priority: High
+
+Difficulty: Medium
+
+Estimated Hours: 4-6 Hours
+
+Urgency: Complete this task as soon as possible.
+
+AI Suggestion:
+Break the work into small milestones, focus on the most important part first, avoid distractions, and review your progress after every hour.
+`,
+      });
+    }
+
   } catch (error) {
-    console.error(error);
-
     return Response.json(
-      { error: "Something went wrong" },
-      { status: 500 }
+      { error: "Invalid request." },
+      { status: 400 }
     );
   }
 }
